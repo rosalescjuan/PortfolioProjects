@@ -1,0 +1,62 @@
+--this query explores how many pizzas were ordered by date 
+SELECT order_id,
+       quantity,
+       date,
+       COUNT(quantity) AS quantity_by_date
+FROM orders
+Join order_details 
+ON order_details.order_id = orders.order_id
+GROUP BY date
+ORDER BY date 
+
+--- This query explores how many orders were placed by date
+SELECT *,
+       COUNT(order_id) AS order_count
+FROM orders
+GROUP BY date
+ORDER BY date 
+
+-- lets join multiple tables to get cost of order, and more information 
+SELECT order_id,
+       date, 
+       pizza_type_id,
+       price, 
+       quantity,
+       (price * quantity) AS total_order_cost
+FROM orders
+JOIN order_details
+ON orders.order_id = order_details.order_id
+JOIN pizza
+ON order_details.pizza_id = pizza.pizza_id
+ORDER BY total_order_cost DESC
+
+-- lets see how many orders per month and year 
+-- this informed us that the data set includes information for 2015
+SELECT COUNT(DISTINCT order_id) AS total_orders_month, 
+       date
+FROM orders
+GROUP BY STRFTIME("%m-%Y", date)
+
+
+-- Lets look at the data in more detail and find peak hours
+SELECT COUNT(time) AS Orders
+FROM orders
+WHERE time between '09:00:00' AND '13:00:00'
+
+-- this query updated the table to separate the order_time occurrences into groups 
+ALTER TABLE orders ADD order_time VARCHAR(255);
+
+UPDATE orders
+SET order_time = 
+CASE
+WHEN time BETWEEN '09:00:00' AND '13:00:00' THEN 'lunch_order'
+WHEN time BETWEEN '13:00:01' AND '17:00:00' THEN 'afternoon_order'
+WHEN time BETWEEN '17:00:01' AND '20:00:00' THEN 'dinner_order'
+WHEN time BETWEEN '20:00:01' and '24:00:00' THEN 'late_night_order'
+END;
+-- This query will now show us the orders as they are given the previous queries partitioning of     --sales. 
+SELECT order_time, 
+       COUNT(order_time) AS total_orders
+FROM orders
+GROUP BY order_time
+ORDER BY total_orders DESC
